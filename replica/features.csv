@@ -1,0 +1,20 @@
+feature,area,priority,original,clone,notes
+Map Exploration & Pan/Zoom,Navigation,must,yes,yes,Interactive Leaflet canvas with custom tiles & center control
+Floating Search & Geocoding,Search,must,yes,yes,Direct search with category filters & coordinates resolution
+Place Details with Accessibility Badges,Place,must,yes,yes,Displays ramps lifts accessible entrance and tactile status
+6 Mobility Profiles Routing,Routing,must,yes,yes,Walking Wheelchair Vision Bicycle Scooter Pram/Elderly
+Step-Free Accessibility Scoring,Routing,must,yes,yes,Multi-parameter penalty scoring with stair/slope/barrier avoidance
+Multi-Route Comparison Sheet,Routing,must,yes,yes,Side-by-side comparison of Recommended vs Alternative routes
+Route Confidence Metric,Routing,must,yes,yes,Score based on data freshness verified nodes and report timestamps
+Turn-by-Turn Navigation Mode,Navigation,must,yes,yes,Full-screen HUD with maneuver banner and distance countdown
+Voice Guidance Prompts,Accessibility,must,yes,yes,Web Speech API audio directions with mute/pitch controls
+Live Community Barrier Reporting,Crowdsourcing,must,yes,yes,Report potholes broken ramps broken lifts barricades
+Community Verification & Freshness Voting,Crowdsourcing,must,yes,yes,Confirm reject resolve barriers with freshness decay
+In-Trip Obstacle Alert & Dynamic Rerouting,Navigation,must,yes,yes,Detects path conflict and generates instant bypass
+Live Event / Rally Detour Layer,Events,should,no,yes,Animated hazard polygon with automatic detour suggestion
+WCAG AAA High Contrast Theme,Accessibility,should,no,yes,High-visibility black/yellow/cyan palette and large typography
+Screen Reader Semantic Steps Table,Accessibility,should,no,yes,Textual step-by-step route breakdown for screen readers
+Multi-City Preset Locations,Navigation,could,no,yes,Quick-switch presets for New Delhi London San Francisco
+FastAPI Backend Spatial REST API,Backend,must,no,yes,FastAPI endpoints for routes reports events places geocoding
+PostgreSQL / PostGIS Schema & Seed Data,Database,must,no,yes,GeoJSON spatial queries with realistic seed datasets
+Offline / Resilient Fallback Engine,Routing,should,no,yes,Client-side routing fallback if backend network drops

@@ -1,0 +1,37 @@
+{
+  "brand": {
+    "name": "AccessRoute Live",
+    "primary": "#2563eb",
+    "primaryHover": "#1d4ed8",
+    "primaryContrast": "#ffffff"
+  },
+  "accessibility": {
+    "stepFreeSafe": "#059669",
+    "stepFreeSafeBg": "#ecfdf5",
+    "warningCaution": "#d97706",
+    "warningCautionBg": "#fffbeb",
+    "hazardDanger": "#dc2626",
+    "hazardDangerBg": "#fef2f2",
+    "eventZone": "#7c3aed",
+    "eventZoneBg": "#f5f3ff"
+  },
+  "highContrast": {
+    "bg": "#000000",
+    "fg": "#ffff00",
+    "accent": "#00ffff",
+    "danger": "#ff3333",
+    "border": "#ffff00"
+  },
+  "spacing": {
+    "touchTargetMin": "48px",
+    "floatingCardPadding": "16px",
+    "cardRadius": "16px",
+    "buttonRadius": "12px"
+  },
+  "typography": {
+    "fontFamily": "Inter, system-ui, -apple-system, sans-serif",
+    "headingManeuver": "22px",
+    "bodyText": "14px",
+    "telemetryNumbers": "18px"
+  }
+}

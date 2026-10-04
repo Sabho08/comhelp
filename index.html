@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AccessRoute Live | AI Inclusive Multi-Modal Navigation & Hazard Intelligence</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  
+  <!-- Canvas Confetti for Demo Celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a'
+            },
+            accessible: {
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="relative w-screen h-screen overflow-hidden bg-slate-950 text-slate-100">
+
+  <!-- Interactive Map Canvas -->
+  <div id="map" class="absolute inset-0 z-0"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-2xl glass-panel shadow-2xl">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+        <i class="fa-solid fa-wheelchair-move text-lg"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
+            AccessRoute <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-semibold uppercase tracking-wider">Live</span>
+          </h1>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 live-indicator animate-pulse"></span>
+            Real-Time Engine
+          </span>
+        </div>
+        <p class="text-xs text-slate-400 hidden sm:block">Inclusive Mobility • Ramp & Escalator Telemetry • Live Traffic & Rally Rerouting</p>
+      </div>
+    </div>
+
+    <!-- Center/Right Action Controls -->
+    <div class="flex items-center gap-2.5 flex-wrap">
+      <!-- City Demo Presets -->
+      <div class="relative">
+        <select id="citySelect" class="bg-slate-800/80 border border-slate-700 text-xs text-slate-200 rounded-xl px-3 py-2 outline-none hover:border-blue-500 focus:border-blue-500 transition-colors">
+          <option value="delhi">🇮🇳 New Delhi (Connaught Place & Metro)</option>
+          <option value="sf">🇺🇸 San Francisco (Market St & Union Sq)</option>
+          <option value="london">🇬🇧 London (Westminster & Soho)</option>
+          <option value="custom">📍 Custom / Click on Map</option>
+        </select>
+      </div>
+
+      <!-- Live Stream Simulator Toggle -->
+      <button id="toggleSimulationBtn" class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-600/30 transition-all shadow-sm">
+        <i class="fa-solid fa-tower-broadcast text-emerald-400 animate-pulse"></i>
+        <span>Live Feed: <strong id="simStatusText">ACTIVE</strong></span>
+      </button>
+
+      <!-- Compare 6 Modes Button -->
+      <button id="openCompareBtn" class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all">
+        <i class="fa-solid fa-code-compare text-blue-400"></i>
+        <span class="hidden md:inline">Compare 6 Modes</span>
+      </button>
+
+      <!-- High Contrast Accessibility Toggle -->
+      <button id="toggleContrastBtn" title="Toggle WCAG AAA High Contrast Mode for Visually Impaired" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-200 transition-all">
+        <i class="fa-solid fa-circle-half-stroke text-amber-400"></i>
+      </button>
+
+      <!-- Voice Guidance Toggle -->
+      <button id="toggleVoiceBtn" title="Voice Guidance Speech" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-200 transition-all">
+        <i class="fa-solid fa-volume-high text-emerald-400" id="voiceIcon"></i>
+      </button>
+
+      <!-- Report Issue Floating Action Button -->
+      <button id="openReportModalBtn" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-lg shadow-red-600/25 transition-all">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Report Problem</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Left Floating Navigation & Mode Hub -->
+  <aside class="absolute top-20 left-3 bottom-4 w-96 max-w-[calc(100vw-1.5rem)] z-20 flex flex-col gap-3 pointer-events-none">
+    
+    <!-- Main Planning Card -->
+    <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3.5 shadow-2xl pointer-events-auto overflow-y-auto max-h-[82vh]">
+      
+      <!-- Origin & Destination Inputs with Autocomplete Search -->
+      <div class="relative flex flex-col gap-2 bg-slate-900/70 p-3 rounded-xl border border-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="w-6 flex flex-col items-center">
+            <span class="w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20"></span>
+            <span class="w-0.5 h-6 bg-slate-700 my-1"></span>
+            <span class="w-3 h-3 rounded-full bg-red-500 ring-4 ring-red-500/20"></span>
+          </div>
+          <div class="flex-1 flex flex-col gap-2 relative">
+            <!-- Start Input & Autocomplete Container -->
+            <div class="relative">
+              <input id="startInput" type="text" value="Central Metro Station Gate 2" placeholder="Search start location (or click map)" class="w-full bg-slate-800/90 text-xs text-slate-100 rounded-lg pl-2.5 pr-7 py-2 border border-slate-700 focus:border-blue-500 outline-none">
+              <button id="currentLocBtn" title="Use current GPS location" class="absolute right-2 top-2 text-slate-400 hover:text-emerald-400 text-xs">
+                <i class="fa-solid fa-crosshairs"></i>
+              </button>
+              <div id="startSuggestions" class="hidden absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-50 max-h-40 overflow-y-auto text-xs"></div>
+            </div>
+
+            <!-- Destination Input & Autocomplete Container -->
+            <div class="relative">
+              <input id="destInput" type="text" value="City General Hospital & Medical Center" placeholder="Search destination address" class="w-full bg-slate-800/90 text-xs text-slate-100 rounded-lg pl-2.5 pr-7 py-2 border border-slate-700 focus:border-blue-500 outline-none">
+              <button id="swapPointsBtn" title="Swap Start & Destination" class="absolute right-2 top-2 text-slate-400 hover:text-blue-400 text-xs">
+                <i class="fa-solid fa-arrow-down-up-across-line"></i>
+              </button>
+              <div id="destSuggestions" class="hidden absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-50 max-h-40 overflow-y-auto text-xs"></div>
+            </div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-400 flex items-center justify-between px-1">
+          <span class="flex items-center gap-1"><i class="fa-solid fa-location-dot text-emerald-400"></i> Click map to place pins</span>
+          <button id="recalcRouteBtn" class="text-blue-400 hover:underline font-semibold flex items-center gap-1">
+            <i class="fa-solid fa-rotate-right"></i> Recalculate
+          </button>
+        </div>
+      </div>
+
+      <!-- 6 MODES SELECTOR -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-route text-blue-400"></i> 6 Mobility Modes
+          </label>
+          <span class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            OSRM Live Grid
+          </span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-1.5" id="modesContainer">
+          <!-- Mode 1: Wheelchair / Accessible -->
+          <button data-mode="wheelchair" class="mode-chip active flex flex-col items-center justify-center p-2 rounded-xl text-center bg-slate-800/90 hover:bg-slate-700/90">
+            <i class="fa-solid fa-wheelchair text-base text-emerald-400 mb-1"></i>
+            <span class="text-xs font-bold leading-tight">Wheelchair</span>
+            <span class="text-[10px] text-emerald-300 font-medium">Ramp & Lift</span>
+          </button>
+
+          <!-- Mode 2: Pedestrian / Walking -->
+          <button data-mode="walking" class="mode-chip flex flex-col items-center justify-center p-2 rounded-xl text-center bg-slate-800/90 hover:bg-slate-700/90">
+            <i class="fa-solid fa-person-walking text-base text-cyan-400 mb-1"></i>
+            <span class="text-xs font-bold leading-tight">Walking</span>
+            <span class="text-[10px] text-slate-400 font-medium">Sidewalks</span>
+          </button>
+
+          <!-- Mode 3: Bicycle / E-Scooter -->
+          <button data-mode="bicycle" class="mode-chip flex flex-col items-center justify-center p-2 rounded-xl text-center bg-slate-800/90 hover:bg-slate-700/90">
+            <i class="fa-solid fa-bicycle text-base text-yellow-400 mb-1"></i>
+            <span class="text-xs font-bold leading-tight">Bicycle</span>
+            <span class="text-[10px] text-slate-400 font-medium">Bike Lanes</span>
+          </button>
+
+          <!-- Mode 4: Public Transit / Metro -->
+          <button data-mode="transit" class="mode-chip flex flex-col items-center justify-center p-2 rounded-xl text-center bg-slate-800/90 hover:bg-slate-700/90">
+            <i class="fa-solid fa-train-subway text-base text-purple-400 mb-1"></i>
+            <span class="text-xs font-bold leading-tight">Metro/Bus</span>
+            <span class="text-[10px] text-purple-300 font-medium">Station Lift</span>
+          </button>
+
+          <!-- Mode 5: Driving / Car -->
+          <button data-mode="driving" class="mode-chip flex flex-col items-center justify-center p-2 rounded-xl text-center bg-slate-800/90 hover:bg-slate-700/90">
+            <i class="fa-solid fa-car text-base text-blue-400 mb-1"></i>
+            <span class="text-xs font-bold leading-tight">Driving</span>
+            <span class="text-[10px] text-slate-400 font-medium">Live Traffic</span>
+          </button>
+
+          <!-- Mode 6: Emergency / Priority -->
+          <button data-mode="emergency" class="mode-chip flex flex-col items-center justify-center p-2 rounded-xl text-center bg-slate-800/90 hover:bg-slate-700/90">
+            <i class="fa-solid fa-truck-medical text-base text-red-400 mb-1"></i>
+            <span class="text-xs font-bold leading-tight">Emergency</span>
+            <span class="text-[10px] text-red-300 font-medium">Priority Pass</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ACTIVE ROUTE TELEMETRY HUD -->
+      <div id="routeMetricsCard" class="bg-gradient-to-br from-slate-900 to-slate-850 p-3.5 rounded-xl border border-slate-700/80 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="flex items-baseline gap-2">
+              <span id="etaValue" class="text-3xl font-extrabold text-white">16 min</span>
+              <span id="distValue" class="text-sm font-semibold text-slate-400">1.4 km</span>
+            </div>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span id="trafficBadge" class="nav-badge bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <i class="fa-solid fa-circle-check"></i> Free Flow
+              </span>
+              <span id="routeSafetyBadge" class="nav-badge bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                <i class="fa-solid fa-shield-check"></i> 100% Step-Free
+              </span>
+            </div>
+          </div>
+
+          <div class="flex flex-col items-end">
+            <button id="startNavigationBtn" class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-transform active:scale-95">
+              <i class="fa-solid fa-location-arrow"></i>
+              <span>Start Trip</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SPECIAL ACCESSIBILITY TELEMETRY (Wheelchair / Handicap specific) -->
+        <div id="accessibilityDetailsBox" class="bg-slate-950/70 p-3 rounded-lg border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between text-xs font-bold text-emerald-400">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-wheelchair"></i> Wheelchair & Handicap Telemetry
+            </span>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+              Grade A (Step-Free)
+            </span>
+          </div>
+
+          <!-- Telemetry Badges -->
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="flex items-center gap-2 bg-slate-900/90 p-2 rounded-md border border-slate-800">
+              <i class="fa-solid fa-road text-emerald-400 text-sm"></i>
+              <div>
+                <span class="text-slate-400 block text-[10px]">Ramps on Path</span>
+                <span class="font-bold text-slate-200" id="rampsCountText">4 Verified Ramps</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 bg-slate-900/90 p-2 rounded-md border border-slate-800">
+              <i class="fa-solid fa-elevator text-cyan-400 text-sm"></i>
+              <div>
+                <span class="text-slate-400 block text-[10px]">Elevators/Lifts</span>
+                <span class="font-bold text-slate-200" id="elevatorsCountText">2 Operational</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 bg-slate-900/90 p-2 rounded-md border border-slate-800">
+              <i class="fa-solid fa-stairs text-amber-400 text-sm"></i>
+              <div>
+                <span class="text-slate-400 block text-[10px]">Escalators Status</span>
+                <span class="font-bold text-slate-200" id="escalatorsCountText">1 Active / Bypassed</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 bg-slate-900/90 p-2 rounded-md border border-slate-800">
+              <i class="fa-solid fa-chart-line text-emerald-400 text-sm"></i>
+              <div>
+                <span class="text-slate-400 block text-[10px]">Slope / Incline</span>
+                <span class="font-bold text-slate-200" id="slopeGradeText">Avg 3.2° (Gentle)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Incline Gradient Profile SVG Mini-Chart -->
+          <div class="mt-2 bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+            <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+              <span>Path Slope Profile:</span>
+              <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> Max 4.8° (Within 5.0° ADA Limit)</span>
+            </div>
+            <svg class="w-full h-8 overflow-visible" viewBox="0 0 200 30" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="slopeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#10b981" />
+                  <stop offset="40%" stop-color="#34d399" />
+                  <stop offset="70%" stop-color="#10b981" />
+                  <stop offset="100%" stop-color="#059669" />
+                </linearGradient>
+              </defs>
+              <path d="M 0 24 Q 40 18, 70 20 T 130 16 T 170 22 L 200 18 L 200 30 L 0 30 Z" fill="url(#slopeGrad)" opacity="0.35"/>
+              <path d="M 0 24 Q 40 18, 70 20 T 130 16 T 170 22 L 200 18" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="70" cy="20" r="3.5" fill="#10b981" stroke="#ffffff" stroke-width="1.5"/>
+              <circle cx="130" cy="16" r="3.5" fill="#10b981" stroke="#ffffff" stroke-width="1.5"/>
+            </svg>
+            <div class="flex justify-between text-[9px] text-slate-500 mt-1">
+              <span>Start (0m)</span>
+              <span>Ramp 1 (3.1°)</span>
+              <span>Ramp 2 (4.0°)</span>
+              <span>Destination</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DYNAMIC LIVE ALERT / RALLY NOTIFICATION BANNER -->
+        <div id="liveAlertBanner" class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2.5">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400 mt-0.5 text-sm animate-bounce"></i>
+          <div class="flex-1">
+            <span class="font-bold block" id="liveAlertTitle">Live Intelligence: Procession Active Nearby</span>
+            <p class="text-[11px] text-amber-300/90 mt-0.5" id="liveAlertDesc">Peaceful gathering near Main Circle. Route automatically adjusted through 3rd Avenue accessible ramp corridor.</p>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Directions Toggle -->
+        <div class="border-t border-slate-800 pt-2">
+          <button id="toggleStepsBtn" class="w-full flex items-center justify-between text-xs text-slate-300 hover:text-white py-1 font-semibold">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-list-ol text-blue-400"></i> Turn-by-Turn Steps (<span id="stepsCount">5</span>)
+            </span>
+            <i class="fa-solid fa-chevron-down text-slate-500 text-xs transition-transform" id="stepsChevron"></i>
+          </button>
+          
+          <div id="stepsListContainer" class="hidden mt-2 space-y-1.5 max-h-48 overflow-y-auto pr-1">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right Floating Map Layer Switcher & Filters -->
+  <div class="absolute top-20 right-3 z-20 flex flex-col items-end gap-2 pointer-events-none">
+    <div class="glass-panel p-2.5 rounded-2xl flex flex-col gap-2 pointer-events-auto shadow-xl w-52">
+      <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">Map Layers & Overlays</span>
+      
+      <!-- Overlays Toggles -->
+      <label class="flex items-center justify-between text-xs text-slate-200 hover:bg-slate-800/60 p-1.5 rounded-lg cursor-pointer">
+        <span class="flex items-center gap-2">
+          <i class="fa-solid fa-traffic-light text-amber-400"></i> Live Traffic
+        </span>
+        <input type="checkbox" id="layerTraffic" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+      </label>
+
+      <label class="flex items-center justify-between text-xs text-slate-200 hover:bg-slate-800/60 p-1.5 rounded-lg cursor-pointer">
+        <span class="flex items-center gap-2">
+          <i class="fa-solid fa-people-group text-red-400"></i> Rallies / Processions
+        </span>
+        <input type="checkbox" id="layerRallies" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+      </label>
+
+      <label class="flex items-center justify-between text-xs text-slate-200 hover:bg-slate-800/60 p-1.5 rounded-lg cursor-pointer">
+        <span class="flex items-center gap-2">
+          <i class="fa-solid fa-wheelchair text-emerald-400"></i> Ramps & Escalators
+        </span>
+        <input type="checkbox" id="layerRamps" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+      </label>
+
+      <label class="flex items-center justify-between text-xs text-slate-200 hover:bg-slate-800/60 p-1.5 rounded-lg cursor-pointer">
+        <span class="flex items-center gap-2">
+          <i class="fa-solid fa-road-barrier text-orange-400"></i> User Hazards / Potholes
+        </span>
+        <input type="checkbox" id="layerHazards" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+      </label>
+
+      <div class="border-t border-slate-800 my-1"></div>
+
+      <!-- Basemap Style -->
+      <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
+        <span>Map Style:</span>
+        <select id="tileStyleSelect" class="bg-slate-800 text-xs text-slate-200 rounded px-1.5 py-0.5 outline-none border border-slate-700">
+          <option value="dark">Dark Matter</option>
+          <option value="light">Positron Light</option>
+          <option value="osm">OpenStreetMap</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Active Incident Counter Pill -->
+    <div class="glass-panel px-3 py-2 rounded-xl text-xs text-slate-300 flex items-center gap-2 shadow-lg pointer-events-auto">
+      <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+      <span><strong id="activeIncidentsCount">5</strong> Live Incidents Tracked</span>
+    </div>
+  </div>
+
+  <!-- Bottom Floating Live Telemetry Ticker -->
+  <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+    <div class="glass-panel px-4 py-1.5 rounded-full flex items-center gap-3 text-xs border border-slate-700/80 shadow-2xl max-w-xl">
+      <span class="flex items-center gap-1.5 text-emerald-400 font-bold whitespace-nowrap">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        STREAM:
+      </span>
+      <span id="liveFeedTicker" class="text-slate-300 truncate text-[11px]">
+        📡 Connected to Live Smart City Grid. Rajiv Chowk Ramp A & Lift 1 verified active.
+      </span>
+    </div>
+  </div>
+
+  <!-- Bottom Floating Navigation Status (Shown when Navigation Mode is Active) -->
+  <div id="activeNavBanner" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 z-30 glass-panel px-6 py-3 rounded-2xl flex items-center gap-5 shadow-2xl border border-blue-500/50">
+    <div class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl">
+      <i class="fa-solid fa-turn-up text-white" id="navDirectionIcon"></i>
+    </div>
+    <div>
+      <span class="text-xs text-blue-400 font-semibold uppercase tracking-wider block" id="navNextInstruction">In 45 meters</span>
+      <h3 class="text-base font-bold text-white" id="navStreetInstruction">Take Ramp A onto Accessible Concourse</h3>
+    </div>
+    <div class="h-8 w-px bg-slate-700"></div>
+    <div class="text-right">
+      <span class="text-lg font-extrabold text-emerald-400" id="navRemainingEta">12 min</span>
+      <span class="text-xs text-slate-400 block" id="navRemainingDist">950 m left</span>
+    </div>
+    <button id="stopNavBtn" class="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-all">
+      Exit
+    </button>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. REPORT PROBLEM / HAZARD MODAL (Includes Photo Attachment & Map Pin) -->
+  <dialog id="reportModal" class="bg-transparent backdrop:bg-slate-950/80 p-4 max-w-lg w-full rounded-2xl focus:outline-none">
+    <div class="glass-panel bg-slate-900/95 border border-slate-700 rounded-2xl p-6 shadow-2xl flex flex-col gap-4 text-slate-100">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold">Report Road / Path Problem</h2>
+            <p class="text-xs text-slate-400">Crowdsourced real-time hazard verification for all users</p>
+          </div>
+        </div>
+        <button id="closeReportModalBtn" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Problem Category Selector -->
+      <div>
+        <label class="text-xs font-semibold text-slate-300 block mb-2">Select Issue Type:</label>
+        <div class="grid grid-cols-3 gap-2" id="hazardTypeGrid">
+          <button type="button" data-type="pothole" class="hazard-type-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-amber-500 text-center flex flex-col items-center gap-1 active">
+            <i class="fa-solid fa-circle-radiation text-amber-400 text-lg"></i>
+            <span class="text-xs font-semibold">Pothole / Damaged</span>
+          </button>
+
+          <button type="button" data-type="barricade" class="hazard-type-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-red-500 text-center flex flex-col items-center gap-1">
+            <i class="fa-solid fa-road-barrier text-red-400 text-lg"></i>
+            <span class="text-xs font-semibold">Barricades</span>
+          </button>
+
+          <button type="button" data-type="broken_ramp" class="hazard-type-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-orange-500 text-center flex flex-col items-center gap-1">
+            <i class="fa-solid fa-wheelchair text-orange-400 text-lg"></i>
+            <span class="text-xs font-semibold">Broken Ramp</span>
+          </button>
+
+          <button type="button" data-type="broken_elevator" class="hazard-type-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-cyan-500 text-center flex flex-col items-center gap-1">
+            <i class="fa-solid fa-elevator text-cyan-400 text-lg"></i>
+            <span class="text-xs font-semibold">Lift / Escalator Down</span>
+          </button>
+
+          <button type="button" data-type="rally" class="hazard-type-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-purple-500 text-center flex flex-col items-center gap-1">
+            <i class="fa-solid fa-bullhorn text-purple-400 text-lg"></i>
+            <span class="text-xs font-semibold">Rally / Mob</span>
+          </button>
+
+          <button type="button" data-type="waterlogging" class="hazard-type-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:border-blue-500 text-center flex flex-col items-center gap-1">
+            <i class="fa-solid fa-water text-blue-400 text-lg"></i>
+            <span class="text-xs font-semibold">Waterlogging</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Severity -->
+      <div>
+        <label class="text-xs font-semibold text-slate-300 block mb-1">Impact Severity:</label>
+        <div class="flex gap-2">
+          <label class="flex-1 text-center py-1.5 rounded-lg border border-slate-700 text-xs cursor-pointer hover:border-emerald-500 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500/20">
+            <input type="radio" name="severity" value="low" class="sr-only">
+            <span>Minor / Caution</span>
+          </label>
+          <label class="flex-1 text-center py-1.5 rounded-lg border border-slate-700 text-xs cursor-pointer hover:border-amber-500 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-500/20">
+            <input type="radio" name="severity" value="medium" checked class="sr-only">
+            <span>Wheelchair Block</span>
+          </label>
+          <label class="flex-1 text-center py-1.5 rounded-lg border border-slate-700 text-xs cursor-pointer hover:border-red-500 has-[:checked]:border-red-500 has-[:checked]:bg-red-500/20">
+            <input type="radio" name="severity" value="high" class="sr-only">
+            <span>Total Blockage</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Location Pin Coordinates -->
+      <div>
+        <label class="text-xs font-semibold text-slate-300 block mb-1">Incident Location:</label>
+        <div class="flex items-center gap-2">
+          <input type="text" id="reportLocationText" value="Middle Ring Rd near Sector 2 (Pin dropped)" class="flex-1 bg-slate-800 text-xs rounded-lg px-3 py-2 border border-slate-700 outline-none text-slate-300">
+          <button type="button" id="pinOnMapBtn" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 rounded-lg text-xs font-semibold">
+            <i class="fa-solid fa-map-pin"></i> Select on Map
+          </button>
+        </div>
+      </div>
+
+      <!-- Photo Attachment / Upload Simulation -->
+      <div>
+        <label class="text-xs font-semibold text-slate-300 block mb-1">Attach Photo Evidence:</label>
+        <div class="flex items-center gap-3 bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+          <input type="file" id="hazardPhotoInput" accept="image/*" class="text-xs text-slate-400 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer">
+          <div id="photoPreviewContainer" class="hidden w-10 h-10 rounded-lg overflow-hidden border border-slate-600 flex-shrink-0">
+            <img id="photoPreviewImg" src="" alt="Hazard preview" class="w-full h-full object-cover">
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="text-xs font-semibold text-slate-300 block mb-1">Description / Notes:</label>
+        <textarea id="reportDescText" rows="2" placeholder="e.g. Deep pothole right on the pedestrian ramp transition, unusable for wheelchairs or strollers." class="w-full bg-slate-800 text-xs rounded-lg p-2.5 border border-slate-700 outline-none text-slate-200 resize-none"></textarea>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+        <button type="button" id="cancelReportBtn" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white">
+          Cancel
+        </button>
+        <button type="button" id="submitReportBtn" class="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs shadow-lg shadow-red-600/30">
+          Publish Real-Time Hazard
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 2. COMPARE 6 MODES MODAL -->
+  <dialog id="compareModal" class="bg-transparent backdrop:bg-slate-950/80 p-4 max-w-3xl w-full rounded-2xl focus:outline-none">
+    <div class="glass-panel bg-slate-900/95 border border-slate-700 rounded-2xl p-6 shadow-2xl flex flex-col gap-4 text-slate-100 max-h-[85vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+            <i class="fa-solid fa-code-compare"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold">All 6 Mobility Modes Compared</h2>
+            <p class="text-xs text-slate-400">Live time, distance, accessibility rating, and hazard detour analysis</p>
+          </div>
+        </div>
+        <button id="closeCompareModalBtn" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Comparison Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="compareGridContainer">
+        <!-- Rendered dynamically via JS for all 6 modes -->
+      </div>
+
+      <div class="text-xs text-slate-400 bg-slate-950/60 p-3 rounded-xl border border-slate-800 flex items-center gap-2">
+        <i class="fa-solid fa-lightbulb text-amber-400"></i>
+        <span><strong>Pro-Tip for Wheelchair & Handicap users:</strong> Wheelchair Mode automatically routes exclusively via zero-step paths with confirmed ramp slopes and operating station elevators.</span>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-12 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Main JavaScript Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

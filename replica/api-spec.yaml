@@ -1,0 +1,154 @@
+openapi: 3.0.3
+info:
+  title: AccessRoute Live™ REST API
+  description: Spatial accessibility routing, community barrier verification, and live turn-by-turn GIS navigation engine.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000/api
+    description: Local FastAPI Backend Engine
+
+paths:
+  /health:
+    get:
+      summary: Backend Health Status
+      responses:
+        '200':
+          description: OK
+  /places:
+    get:
+      summary: Search Accessible POIs and Landmarks
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: city
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of verified accessible places
+  /routes:
+    post:
+      summary: Generate Multi-Alternative Accessibility Routes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                origin:
+                  type: array
+                  items:
+                    type: number
+                destination:
+                  type: array
+                  items:
+                    type: number
+                profile:
+                  type: string
+                  enum: [walking, wheelchair, vision, bicycle, scooter, pram_elderly]
+                avoid_stairs:
+                  type: boolean
+                max_slope:
+                  type: number
+      responses:
+        '200':
+          description: Scored route alternatives with step-free breakdown
+  /reports:
+    get:
+      summary: Retrieve Nearby Community Hazards
+      parameters:
+        - name: lat
+          in: query
+          type: number
+        - name: lng
+          in: query
+          type: number
+        - name: radius_km
+          in: query
+          type: number
+      responses:
+        '200':
+          description: List of active and unverified reports
+    post:
+      summary: Submit a New Obstacle or Hazard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category:
+                  type: string
+                title:
+                  type: string
+                description:
+                  type: string
+                severity:
+                  type: string
+                lat:
+                  type: number
+                lng:
+                  type: number
+      responses:
+        '201':
+          description: Created report record
+  /reports/{report_id}/vote:
+    post:
+      summary: Cast Community Verification Vote (Confirm / Reject / Resolve)
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vote_type:
+                  type: string
+                  enum: [upvote, downvote, resolve]
+                user_id:
+                  type: string
+      responses:
+        '200':
+          description: Updated confidence and confirmation counts
+  /events:
+    get:
+      summary: Retrieve Active Rally and Event Hazard Polygons
+      responses:
+        '200':
+          description: List of active events with detour corridors
+  /navigation/reroute:
+    post:
+      summary: In-Trip Collision Detection and Dynamic Detour Calculation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                current_location:
+                  type: array
+                  items:
+                    type: number
+                destination:
+                  type: array
+                  items:
+                    type: number
+                obstacle_id:
+                  type: string
+                profile:
+                  type: string
+      responses:
+        '200':
+          description: Recalculated obstacle-free bypass route
